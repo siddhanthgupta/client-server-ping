@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
     // Creating a socket: IPv4 domain, TCP connection oriented type
     // Protocol for this is TCP by default
     int server_socket;
-    if ((server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((server_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         fprintf(stderr, "%s: Error: Unable to create server socket. Exiting.\n",
                 argv[0]);
         exit(1);
@@ -85,14 +85,15 @@ int main(int argc, char** argv) {
         int bytes_read;
         memset(buffer, 0, MAX_BUFFER_SIZE + 1);
         if ((bytes_read = recvfrom(server_socket, buffer, MAX_BUFFER_SIZE, 0,
-                (struct sockaddr*) client_address,
+                (struct sockaddr*) &client_address,
                 (int*) &client_address_length)) <= 0) {
             fprintf(stderr, "%s : Error: No data read from client.\n", argv[0]);
-            exit(1);
-        }
-        display(buffer, &client_address);
-        sendto(server_socket, buffer, bytes_read, 0, (struct sockaddr*) &client_address, client_address_length);
 
+        } else {
+            display(buffer, &client_address);
+            sendto(server_socket, buffer, bytes_read, 0,
+                    (struct sockaddr*) &client_address, client_address_length);
+        }
     }
     return 0;
 }
