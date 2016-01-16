@@ -10,7 +10,7 @@
 #include <string.h>
 //#include <netinet/in.h>
 #include <netdb.h>              // For gethostbyname
-#define SERVER_PORT_NO 5648
+
 void usage(char* program) {
     printf("USAGE: %s <Server IP> <Port Number>\n", program);
 }
