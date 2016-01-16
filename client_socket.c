@@ -57,8 +57,10 @@ int main(int argc, char** argv) {
         // TODO: More meaningful error message
         exit(1);
     }
+
     int counter = 1;
     while (1) {
+        sleep(1);
         char str[255];
         sprintf(str, "The Lannisters send their regards %d", counter);
         write(client_socket, str, 255);
@@ -70,6 +72,7 @@ int main(int argc, char** argv) {
             exit(1);
         }
         printf("Received: %s\n", buffer);
+        counter++;
     }
     return 0;
 }
