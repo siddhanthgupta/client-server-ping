@@ -20,7 +20,6 @@
 #define MAX_CONCURRENT_CLIENTS 5
 #define MAX_BUFFER_SIZE 255
 
-
 void display(char* buffer, struct sockaddr_in* from_addr) {
     char s[MAX_BUFFER_SIZE];
     if (inet_ntop(AF_INET, &(from_addr->sin_addr), s, MAX_BUFFER_SIZE) == NULL) {
@@ -29,7 +28,6 @@ void display(char* buffer, struct sockaddr_in* from_addr) {
         printf("Message received from %s: %s\n", s, buffer);
     }
 }
-
 
 /*
  * On the server side, we need to
@@ -81,36 +79,20 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
-    // We listen for connections now
-    if (listen(server_socket, MAX_CONCURRENT_CLIENTS) < 0) {
-        fprintf(stderr, "%s: Error: Unable to listen for connections.\n",
-                argv[0]);
-        exit(1);
-    }
-
     // We accept connections indefinitely in a loop
     while (1) {
-        if ((client_socket = accept(server_socket,
-                (struct sockaddr*) &client_address,
-                (socklen_t*) &client_address_length)) < 0) {
-            fprintf(stderr, "%s: Error: Unable to accept connection.\n",
-                    argv[0]);
+        char buffer[MAX_BUFFER_SIZE + 1];
+        int bytes_read;
+        memset(buffer, 0, MAX_BUFFER_SIZE + 1);
+        if ((bytes_read = recvfrom(server_socket, buffer, MAX_BUFFER_SIZE, 0,
+                (struct sockaddr*) client_address,
+                (int*) &client_address_length)) <= 0) {
+            fprintf(stderr, "%s : Error: No data read from client.\n", argv[0]);
             exit(1);
         }
-        while (1) {
-            char buffer[MAX_BUFFER_SIZE + 1];
-            int bytes_read;
-            memset(buffer, 0, MAX_BUFFER_SIZE + 1);
-            if ((bytes_read = read(client_socket, buffer, MAX_BUFFER_SIZE))
-                    <= 0) {
-                fprintf(stderr, "%s : Error: No data read from client.\n",
-                        argv[0]);
-                exit(1);
-            }
-            display(buffer, &client_address);
-            write(client_socket, buffer, bytes_read);
+        display(buffer, &client_address);
+        sendto(server_socket, buffer, bytes_read, 0, (struct sockaddr*) &client_address, client_address_length);
 
-        }
     }
     return 0;
 }
