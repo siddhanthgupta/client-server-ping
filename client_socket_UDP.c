@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
     struct sockaddr_in server_address;
     int server_address_length;
     // Creating the socket
-    if ((client_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((client_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         fprintf(stderr, "%s: Error: Unable to create socket.\n", argv[0]);
         exit(1);
     }
@@ -52,6 +52,7 @@ int main(int argc, char** argv) {
 
     int counter = 1;
     while (1) {
+        //sleep(1);
         char str[255];
         sprintf(str, "The Lannisters send their regards %d", counter);
         sendto(client_socket, str, 255, 0, (struct sockaddr*) &server_address,
@@ -60,12 +61,14 @@ int main(int argc, char** argv) {
         int bytes_read;
         memset(buffer, 0, 255);
         if ((bytes_read = recvfrom(client_socket, buffer, 255, 0,
-                (struct sockaddr*) server_address,
-                (int*) &server_address_length)) <= 0) {
+                NULL, NULL)) <= 0) {
             fprintf(stderr, "%s : Error: No data read from client.\n", argv[0]);
-            exit(1);
         }
+        else {
         printf("Received: %s\n", buffer);
+        counter++;
+        }
+
     }
     return 0;
 }
