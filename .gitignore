@@ -1,0 +1,12 @@
+.cproject
+.project
+client_socket
+server_socket
+GPATH
+GRTAGS
+GSYMS
+GTAGS
+server_socket.o
+client_socket.o
+/Debug/
+/.metadata/
