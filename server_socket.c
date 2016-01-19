@@ -16,20 +16,25 @@
 #include <stdlib.h>
 #include <arpa/inet.h>          // For the htonl function
 
-#define SERVER_PORT_NO 5648
+#define SERVER_PORT_NO 5650
 #define MAX_CONCURRENT_CLIENTS 5
 #define MAX_BUFFER_SIZE 255
 
+struct ping_packet {
+    int seq_no;
+    char message[255];
+    struct timeval timestamp;
+};
 
-void display(char* buffer, struct sockaddr_in* from_addr) {
+void display(struct ping_packet* buffer, struct sockaddr_in* from_addr) {
     char s[MAX_BUFFER_SIZE];
     if (inet_ntop(AF_INET, &(from_addr->sin_addr), s, MAX_BUFFER_SIZE) == NULL) {
         fprintf(stderr, "Unable to read address\n");
     } else {
-        printf("Message received from %s: %s\n", s, buffer);
+        printf("Message received from %s: %s SEQ=%d TIME=%d\n", s,
+                buffer->message, buffer->seq_no, buffer->timestamp.tv_sec);
     }
 }
-
 
 /*
  * On the server side, we need to
@@ -98,17 +103,17 @@ int main(int argc, char** argv) {
             exit(1);
         }
         while (1) {
-            char buffer[MAX_BUFFER_SIZE + 1];
+            struct ping_packet buffer;
             int bytes_read;
-            memset(buffer, 0, MAX_BUFFER_SIZE + 1);
-            if ((bytes_read = read(client_socket, buffer, MAX_BUFFER_SIZE))
+            //memset(buffer, 0, MAX_BUFFER_SIZE + 1);
+            if ((bytes_read = read(client_socket, &buffer, sizeof(buffer)))
                     <= 0) {
                 fprintf(stderr, "%s : Error: No data read from client.\n",
                         argv[0]);
                 exit(1);
             }
-            display(buffer, &client_address);
-            write(client_socket, buffer, bytes_read);
+            display(&buffer, &client_address);
+            write(client_socket, &buffer, sizeof(struct ping_packet));
 
         }
     }

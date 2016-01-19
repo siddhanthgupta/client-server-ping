@@ -7,12 +7,29 @@
 #include <sys/socket.h>         // For socket
 #include <stdlib.h>
 #include <stdio.h>
+#include <signal.h>
+#include <sys/time.h>
 #include <string.h>
 //#include <netinet/in.h>
 #include <netdb.h>              // For gethostbyname
 
 void usage(char* program) {
     printf("USAGE: %s <Server IP> <Port Number>\n", program);
+}
+
+struct ping_packet {
+    int seq_no;
+    char message[255];
+    struct timeval timestamp;
+};
+
+struct ping_packet* make_packet(int seq_no) {
+    struct ping_packet* packet = (struct ping_packet*) malloc(
+            sizeof(struct ping_packet));
+    sprintf(packet->message, "ECHO");
+    gettimeofday(&(packet->timestamp), NULL);
+    packet->seq_no = seq_no;
+    return packet;
 }
 
 /*
@@ -57,21 +74,31 @@ int main(int argc, char** argv) {
         // TODO: More meaningful error message
         exit(1);
     }
-
+    struct timeval timeout;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+    setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout,
+            sizeof(timeout));
     int counter = 1;
     while (1) {
         sleep(1);
-        char str[255];
-        sprintf(str, "The Lannisters send their regards %d", counter);
-        write(client_socket, str, 255);
-        char buffer[255];
+        struct ping_packet* packet = make_packet(counter);
+        write(client_socket, packet, sizeof(struct ping_packet));
+
+        struct ping_packet buffer;
+        char buffer2[255];
         int bytes_read;
-        memset(buffer, 0, 255);
-        if ((bytes_read = read(client_socket, buffer, 255)) <= 0) {
+        if ((bytes_read = read(client_socket, &buffer, sizeof(struct ping_packet))) <= 0) {
             fprintf(stderr, "%s : Error: No data read from client.\n", argv[0]);
-            exit(1);
+        } else {
+            if(buffer.seq_no != counter) {
+                printf("Wrong packet received\n");
+            }
+            else
+                printf("Received: %s SEQ=%d TIME=%d\n", buffer.message,
+                    buffer.seq_no, buffer.timestamp.tv_sec);
+//            printf("received %s\n", buffer2);
         }
-        printf("Received: %s\n", buffer);
         counter++;
     }
     return 0;
