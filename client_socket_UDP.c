@@ -50,7 +50,7 @@ int timeval_subtract(struct timeval *result, struct timeval *x,
 struct ping_packet* make_packet(int seq_no) {
     struct ping_packet* packet = (struct ping_packet*) malloc(
             sizeof(struct ping_packet));
-    sprintf(packet->message, "ECHO\0");
+    sprintf(packet->message, "ECHO");
     gettimeofday(&(packet->timestamp), NULL);
     packet->seq_no = seq_no;
     return packet;
@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
     server_address.sin_port = htons(port_number);
 
     printf("Host given is %s:%d\n", argv[1], port_number);
-    printf("Here");
+//    printf("Here");
     struct sockaddr_in address;
     address.sin_family = AF_INET;
         // For the Internet domain, if we specify the special IP address INADDR_ANY (defined in
@@ -130,6 +130,7 @@ int main(int argc, char** argv) {
 //            sizeof(timeout));
     int counter = 1;
     while (counter<=10) {
+        sleep(1);
         struct ping_packet* packet = make_packet(counter);
         sendto(client_socket, packet, sizeof(struct ping_packet), 0,
                 (struct sockaddr*) &server_address, sizeof(struct sockaddr_in));
@@ -149,9 +150,9 @@ int main(int argc, char** argv) {
             FD_SET(client_socket, &rset);
             sel_ret = select(client_socket + 1, &rset, NULL, NULL, &timeout);
             if (sel_ret == 0) {
-                printf("Select call timed out. No data received. \n");
-                printf("Timeout is %d and %d\n", timeout.tv_sec,
-                        timeout.tv_usec);
+//                printf("Select call timed out. No data received. \n");
+//                printf("Timeout is %d and %d\n", timeout.tv_sec,
+//                        timeout.tv_usec);
                 printf(
                         "From localhost seq_num=%d Destination Host Unreachable\n", counter);
                 // TODO: get IP address of client and print it instead of "localhost"
@@ -170,14 +171,14 @@ int main(int argc, char** argv) {
                     if (buffer.seq_no != counter) {
                         printf("Wrong packet received\n");
                     } else {
-                        printf("Received: %s SEQ=%d TIME=%d\n", buffer.message,
-                                buffer.seq_no, buffer.timestamp.tv_sec);
+//                        printf("Received: %s SEQ=%d TIME=%d\n", buffer.message,
+//                                buffer.seq_no, buffer.timestamp.tv_sec);
                         process_reply(&buffer, bytes_read, &server_address);
                         flag = 1;
                     }
                 }
             }
-            printf("flag is %d and sel_ret is %d\n", flag, sel_ret);
+//            printf("flag is %d and sel_ret is %d\n", flag, sel_ret);
         } while (!flag && sel_ret);
         counter++;
     }

@@ -1,4 +1,3 @@
-
 /*
  * client_socket.c
  *
@@ -83,7 +82,7 @@ int modified_write(int socket, void* buffer, size_t buf_size, int server_socket,
         write(socket, buffer, buf_size);
         sendto(server_socket, buffer, buf_size, 0,
                 (struct sockaddr*) client_address, client_address_length);
-        printf("Slept for timer: %d\n", timer.tv_nsec);
+        //printf("Slept for timer: %d\n", timer.tv_nsec);
         return 1;
     }
     printf("Return packet dropped\n");
@@ -155,18 +154,20 @@ int main(int argc, char** argv) {
                 sizeof(struct ping_packet), 0,
                 (struct sockaddr*) &client_address,
                 (int*) &client_address_length)) <= 0) {
-            fprintf(stderr, "%s : Error: No data read from client.\n", argv[0]);
-            printf("Returned %d with err_no = %s\n", bytes_read, strerror(errno));
+//            fprintf(stderr, "%s : Error: No data read from client.\n", argv[0]);
+//            printf("Returned %d with err_no = %s\n", bytes_read,
+//                    strerror(errno));
 //            exit(1);
-        }
-        else {
-            printf("%d bytes read\n", bytes_read);
-        display(&buffer, &client_address);
-//        modified_write(client_socket, &buffer, sizeof(struct ping_packet),
-//                server_socket, &client_address, client_address_length);
-        int x = sendto(client_socket, &buffer, sizeof(struct ping_packet), 0,
-                        (struct sockaddr*) &client_address, client_address_length);
-        printf("Sent %d bytes\n", x);
+        } else {
+//            printf("%d bytes read\n", bytes_read);
+            display(&buffer, &client_address);
+            modified_write(server_socket, &buffer, sizeof(struct ping_packet),
+                    server_socket, &client_address, client_address_length);
+//            int x = sendto(server_socket, &buffer, sizeof(struct ping_packet),
+//                    0, (struct sockaddr*) &client_address,
+//                    client_address_length);
+//            printf("Sent %d bytes. Client address length = %d, sockaddr = %d\n",
+//                    x, client_address_length, sizeof(struct sockaddr_in));
         }
 
     }
