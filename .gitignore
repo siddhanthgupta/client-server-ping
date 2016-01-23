@@ -10,3 +10,4 @@ GTAGS
 server_socket.o
 client_socket.o
 /Debug/
+/.settings/
