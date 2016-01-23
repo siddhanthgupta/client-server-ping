@@ -1,6 +1,8 @@
 .cproject
 client_socket
 server_socket
+client_socket_UDP
+server_socket_UDP
 GPATH
 GRTAGS
 GSYMS
