@@ -71,6 +71,37 @@ void process_reply(struct ping_packet* buffer, int bytes_read,
     }
 }
 
+char server_name[1024];
+int ntransmitted;
+int nreceived;
+double tmax;
+double tmin;
+double tsum;
+
+/*
+ * Displays the ping statistics and gracefully terminates the program
+ */
+void finish() {
+    printf("--- %s ping statistics ---\n", server_name);
+    printf("%d packets transmitted, ", ntransmitted);
+    printf("%d packets received, ", nreceived);
+
+    if (ntransmitted)
+        if (nreceived > ntransmitted)
+            printf("-- somebody's printing up packets!\n");
+        else
+            printf("%d%% packet loss\n",
+                    (int) (((ntransmitted - nreceived) * 100) / ntransmitted));
+    if (nreceived)
+        printf("round-trip min/avg/max = %.3lf/%.3lf/%.3lf ms\n",
+                tmin, (tsum / (nreceived)), tmax);
+    if (nreceived == 0)
+        exit(1);
+    exit(0);
+}
+
+
+
 /*
  * The steps involved in establishing a socket on the client side are as follows:
  *
@@ -94,7 +125,7 @@ int main(int argc, char** argv) {
         fprintf(stderr, "%s: Error: Unable to create socket.\n", argv[0]);
         exit(1);
     }
-
+    strcpy(server_name, argv[1]);
     // Setting server address using the IP provided by the user
     if ((server = gethostbyname(argv[1])) == NULL) {
         fprintf(stderr, "%s: Error: Invalid host.\n", argv[0]);
@@ -109,7 +140,7 @@ int main(int argc, char** argv) {
     // Connecting to server
     if (connect(client_socket, (struct sockaddr*) &server_address,
             sizeof(server_address)) < 0) {
-        fprintf(stderr, "%s: Error: Unable to connect to server.\n", argv[0]);
+        perror("Error: Unable to connect to server. ");
         // TODO: More meaningful error message
         exit(1);
     }
@@ -119,11 +150,19 @@ int main(int argc, char** argv) {
     setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout,
             sizeof(timeout));
     int counter = 1;
+    ntransmitted = 0;
+    nreceived = 0;
+    tsum = 0;
+    tmin = 1.0/0.0;
+    tmax = -1;
+    atexit(finish);
+    // SIGINT generated (Ctrl+c) will cause the finish() function to execute
+    signal(SIGINT, finish);
     while (counter <= 10) {
         sleep(1);
         struct ping_packet* packet = make_packet(counter);
         write(client_socket, packet, sizeof(struct ping_packet));
-
+        ntransmitted++;
         struct ping_packet buffer;
         int bytes_read;
 
@@ -161,6 +200,17 @@ int main(int argc, char** argv) {
 //                                buffer.seq_no, buffer.timestamp.tv_sec);
                         process_reply(&buffer, bytes_read, &server_address);
                         flag = 1;
+                        nreceived++;
+                        struct timeval temp, res;
+                        temp.tv_sec = 1;
+                        temp.tv_usec = 0;
+                        timeval_subtract(&res, &temp, &timeout);
+                        double cur_time = res.tv_sec * 1000.00 + res.tv_usec/1000.00;
+                        if(cur_time > tmax)
+                            tmax = cur_time;
+                        if(cur_time < tmin)
+                            tmin = cur_time;
+                        tsum+=cur_time;
                     }
                 }
             }
@@ -168,6 +218,7 @@ int main(int argc, char** argv) {
         } while (!flag && sel_ret);
         counter++;
     }
+
     return 0;
 }
 

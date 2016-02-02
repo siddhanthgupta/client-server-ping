@@ -70,7 +70,7 @@ int get_gaussian_delay() {
     return nano_delay;
 }
 
-int modified_write(int socket, void* buffer, size_t buf_size, int server_socket,
+int modified_write(void* buffer, size_t buf_size, int server_socket,
         struct sockaddr_in* client_address, int client_address_length) {
     int random_number = rand() % 100 + 1;
     if (random_number > PROBABILITY_DROP) {
@@ -79,7 +79,7 @@ int modified_write(int socket, void* buffer, size_t buf_size, int server_socket,
         timer.tv_nsec = random_delay;
         timer.tv_sec = 0;
         nanosleep(&timer, NULL);
-        write(socket, buffer, buf_size);
+        //write(socket, buffer, buf_size);
         sendto(server_socket, buffer, buf_size, 0,
                 (struct sockaddr*) client_address, client_address_length);
         //printf("Slept for timer: %d\n", timer.tv_nsec);
@@ -161,7 +161,7 @@ int main(int argc, char** argv) {
         } else {
 //            printf("%d bytes read\n", bytes_read);
             display(&buffer, &client_address);
-            modified_write(server_socket, &buffer, sizeof(struct ping_packet),
+            modified_write(&buffer, sizeof(struct ping_packet),
                     server_socket, &client_address, client_address_length);
 //            int x = sendto(server_socket, &buffer, sizeof(struct ping_packet),
 //                    0, (struct sockaddr*) &client_address,
